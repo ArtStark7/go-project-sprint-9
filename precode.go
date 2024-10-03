@@ -19,12 +19,12 @@ func Generator(ctx context.Context, ch chan<- int64, fn func(int64)) {
 	for {
 		select {
 		case <-ctx.Done():
-			close(ch)
+			defer close(ch)
 			return
 		default:
 			fn(number)
 			ch <- number
-			atomic.AddInt64(&number, 1)
+			number++
 		}
 	}
 }
@@ -72,7 +72,7 @@ func main() {
 		go func(in <-chan int64, index int) {
 			defer wg.Done()
 			for num := range in {
-				atomic.AddInt64(&amounts[index], 1)
+				amounts[index]++
 				chOut <- num
 			}
 		}(outs[i], i)
@@ -88,8 +88,8 @@ func main() {
 
 	// 5. Читаем числа из результирующего канала
 	for v := range chOut {
-		atomic.AddInt64(&count, 1)
-		atomic.AddInt64(&sum, v)
+		count++
+		sum += v
 	}
 
 	fmt.Println("Количество чисел", inputCount, count)
